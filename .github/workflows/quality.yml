@@ -1,0 +1,76 @@
+name: Quality gates
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast:
+    name: Lint, types, rules and API
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+  browser:
+    name: Browser quality (${{ matrix.browser }})
+    needs: fast
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ fromJSON(github.event_name == 'pull_request' && '["chromium"]' || '["chromium","firefox","webkit"]') }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: PR smoke and accessibility
+        if: github.event_name == 'pull_request'
+        run: npm run test:smoke
+      - name: Complete browser suite
+        if: github.event_name != 'pull_request'
+        run: npx playwright test --project=${{ matrix.browser }}
+      - name: Publish quality summary
+        if: always()
+        run: |
+          if [ -f reports/quality.json ]; then
+            npm run --silent quality:summary >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Prepare diagnosis evidence
+        if: always()
+        run: |
+          if [ -f reports/quality.json ]; then
+            npm run analyze:failures -- reports/quality.json
+          fi
+      - name: Retain reports and failure evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: quality-${{ matrix.browser }}-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            test-results/
+            reports/
+          if-no-files-found: ignore
+          retention-days: 7

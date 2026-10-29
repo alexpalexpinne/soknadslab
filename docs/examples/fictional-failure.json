@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "status": "failed",
+  "cases": [
+    {
+      "title": "submission remains read-only after reload and browser Back @smoke",
+      "project": "firefox",
+      "outcome": "unexpected",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "signals": [
+            "toHaveCount assertion failed; inspect trace and expected state."
+          ],
+          "requests": [
+            { "method": "POST", "path": "/api/session", "status": 201 },
+            { "method": "POST", "path": "/api/applications", "status": 201 },
+            { "method": "PUT", "path": "/api/applications/:id", "status": 200 },
+            {
+              "method": "POST",
+              "path": "/api/applications/:id/submit",
+              "status": 200
+            },
+            { "method": "GET", "path": "/api/applications", "status": 200 },
+            { "method": "GET", "path": "/api/applications/:id", "status": 200 }
+          ]
+        }
+      ]
+    }
+  ]
+}
