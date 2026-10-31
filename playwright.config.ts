@@ -15,6 +15,8 @@ export default defineConfig({
     ["html", { open: "never" }],
     ["json", { outputFile: "reports/playwright.json" }],
     ["./scripts/quality-reporter.ts"],
+    // CI merges the per-browser blobs into the single published report.
+    ...(process.env.CI ? [["blob"] as const] : []),
   ],
   use: {
     baseURL: "http://127.0.0.1:4173",

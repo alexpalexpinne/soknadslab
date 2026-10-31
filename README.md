@@ -2,6 +2,8 @@
 
 [![Quality gates](https://github.com/alexpalexpinne/soknadslab/actions/workflows/quality.yml/badge.svg)](https://github.com/alexpalexpinne/soknadslab/actions/workflows/quality.yml)
 
+**[Latest test report →](https://alexpalexpinne.github.io/soknadslab/)** Chromium, Firefox and WebKit results from the most recent run on `main`.
+
 How I would approach quality engineering for a grant application platform. I built a small, realistic grant application service and a risk-based test suite around it: Playwright end-to-end tests, real API and database tests, automated accessibility checks, CI quality gates and AI-assisted test analysis.
 
 ## Summary
